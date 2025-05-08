@@ -8,6 +8,7 @@ import { SEARCH_PAGE_SIZE } from "../../settings";
 import { attempt } from "../../utils";
 import { getDocument } from "../../api/data/document";
 import { parseDownloadUrls } from "../../api/data/url";
+import { exit } from "process";
 
 export interface IEventActions {
   backToSearch: () => void;
@@ -69,14 +70,27 @@ export const createEventActionsSlice = (
       return;
     }
 
-    store.setActiveLayout(LAYOUT_KEY.RESULT_LIST_LAYOUT);
-    store.setIsLoading(true);
-    store.setLoaderMessage(Label.GETTING_RESULTS);
+    //store.setActiveLayout(LAYOUT_KEY.RESULT_LIST_LAYOUT);
+    //store.setIsLoading(true);
+    //store.setLoaderMessage(Label.GETTING_RESULTS);
 
     const entries = await store.search(store.searchValue, store.currentPage);
     // search to cache next page
     await store.search(store.searchValue, store.currentPage + 1);
     store.setEntries(entries);
+
+    // Write results to local file
+    const fs = require('fs');
+    const dumpPath = './results.json';
+    fs.writeFileSync(dumpPath, JSON.stringify(entries, null, 2));
+
+    process.exit(0);
+    // Exit after writing file in CLI mode
+    console.log(`CLI Mode: ${store.CLIMode}`); // Debug logging
+    if (store.CLIMode) {
+      console.log('Exiting process after writing results'); // Debug logging
+      process.exit(0);
+    }
 
     store.setIsLoading(false);
   },
